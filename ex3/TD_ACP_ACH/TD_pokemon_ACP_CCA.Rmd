@@ -1,0 +1,116 @@
+---
+title: "TD ACP + CCA pokemon"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+
+
+```{r}
+library(dplyr)
+```
+
+
+# Téléchargement et visualisation des données
+
+Avant de commencer, nous allons définir un répertoire de travail. Cela permettra à R de savoir dans quel dossier de notre PC nous souhaitons travailler
+
+```{r}
+setwd("~/UPPA/Cours/NEC/L3/Machine learning/TD_PCA")
+```
+
+
+## Les données
+
+Téléchargez les données au lien suivant : https://www.kaggle.com/datasets/abcsds/pokemon , importez les sous R et décrivez les rapidement. (Nombre de lignes, signification des colonnes, type des variables)
+
+```{r}
+
+
+```
+
+
+## Visualisation
+
+Visualisez les liens entre les différentes variables quantitatives, commentez
+
+
+```{r}
+
+```
+
+# Analyse en Composantes Principales
+
+Sélectionnez les colonnes sur lesquelles vous allez faire l'ACP
+
+```{r}
+
+```
+
+
+## Réalisation
+
+```{r}
+
+```
+
+
+## Visualisation de l'inertie des axes
+
+```{r}
+
+```
+
+
+
+## Visualisation des varibles
+
+```{r}
+
+```
+
+Quelles sont les variables qui contribuent le plus à la construction des axes
+
+```{r}
+
+
+```
+
+
+## Visualisation des individus statistiques
+
+```{r}
+
+```
+## Biplot
+
+On peut faire un graphique des lignes et des colonnes ensemble: le biplot. 
+
+La fonction biplot permet aussi de colorer les individus en fonction d'une variable qualitative (codée en facteur). Voici l'exemple avec la variable "géneration".
+
+```{r}
+fviz_pca_biplot(res.pca, label="var", habillage=as.factor(Pokemon$Generation),
+               addEllipses=TRUE, ellipse.level=0.95)
+```
+
+La génération du pokémon n'a pas d'influence sur le regoupement des individus. Essayez d'autres variables
+
+
+# Utiliser les résultats de l'ACP pour faire une ACH
+
+Cette approche est utile dans les situations où l'on dispose d'un grand ensemble de données contenant des variables continues : l'analyse en composantes principales peut être utilisée pour réduire la dimension des données avant l'analyse de regroupement hiérarchique. Au lieu d'analyser le regroupement de deux variables seulement, nous pouvons analyser le regroupement de l'ensemble des données.
+
+
+```{r}
+pca2 = PCA(data_pca, ncp = 3, graph = FALSE)
+hcpc <- HCPC(pca2, graph = FALSE)
+
+fviz_dend(hcpc, cex = 0.8, palette = "Dark2", rect = T, rect_fill = T, rect_border = "Dark2", show_labels = F) 
+
+fviz_cluster(hcpc, palette = "Dark2", show.clust.cent = T, main = "Factor map", labelsize=1)
+```
+
+Le graphique 2 produit un regroupement sur le tracé de l'ACP avec les mêmes dimensions que celles discutées précédemment. Il est maintenant clair que nous pouvons distinguer trois groupes distincts de Pokemon. Dans le groupe 1, on trouve des pokémons avec des bonnes stats défensives. Les groupes 2 et 3 contiennent des Pokemon médiocres et faibles en termes de défense et de vitesse (groupes 3 et 2, respectivement).

@@ -1,0 +1,192 @@
+---
+title: 'Machine learning non-supervisé : Analyse du panier de la ménagère'
+output:
+  pdf_document: 
+    toc: true
+    toc_depth: 2
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+
+\newpage
+
+# Exemple : le jeu de données Groceries
+
+## Charger les données
+
+```{r}
+# Charger les packages
+library(arules)
+library(arulesViz)
+library(datasets)
+# Charger le jeu de données
+data(Groceries)
+```
+
+
+## Visualisation du jeu de données
+
+```{r}
+itemFrequencyPlot(Groceries,topN=20,type="absolute")
+```
+
+
+## Mettre en place l'analyse
+
+Fixer les règles de décision : 
+
+Le *support* est définit par :
+
+• P(A) pour un item
+
+• $P({A,B}) = P A \cap B$ pour un itemset de cardinal 2
+
+• C’est un nombre compris entre 0 et 1
+
+• Le support est donc le même pour toutes les règles issues d’un itemset !
+
+• C’est un indicateur de fiabilité de la règle
+
+Il permet d'identifier les combinaisons qui sont suffisamment fréquentes pour être intéressantes (par exemple, l'achat de poisson seul ou l'achat de poisson et de citrons ensemble).
+
+La *confiance*
+
+• C’est la probabilité conditionnelle d’avoir B sachant A : $P(B/A)$
+
+• C’est un nombre compris entre 0 et 1 
+
+• On n’obtient pas la même valeur pour B->A
+
+• C’est un indicateur de précision de la règle
+
+Le *Lift* : 
+
+Lift (A => B) = 1 signifie qu'à l'intérieur d'un ensemble d'éléments, il n'y a pas de corrélation.
+
+Lift (A => B) > 1 signifie une corrélation positive, les produits sont plus souvent achetés ensembles.
+
+Lift (A => B) <1 signifie qu'il est peu probable d'acheter ensemble la corrélation négative de l'ensemble d'éléments, c'est-à-dire les produits de l'ensemble d'éléments A et B.
+
+
+*Un exemple de règles d'association :*
+
+Supposons qu'il y ait 100 clients
+
+10 d'entre eux ont acheté du lait, 8 ont acheté du beurre et 6 ont acheté les deux.
+
+a acheté du lait => a acheté du beurre
+
+soutien = P(lait et beurre) = 6/100 = 0,06
+
+confiance = soutien/P(Beurre) = 0,06/0,08 = 0,75
+
+lift = confiance/P(Lait) = 0,75/0,10 = 7,5
+
+Remarque : cet exemple est extrêmement réduit. Dans la pratique, une règle doit être soutenue par plusieurs centaines de transactions avant d'être considérée comme statistiquement significative, et les ensembles de données contiennent souvent des milliers ou des millions de transactions.
+
+
+```{r}
+rules1 <- apriori(Groceries, parameter = list(supp = 0.001, conf = 0.8))
+# montrer le top 5 des règles mises en place
+options(digits=2)
+inspect(rules1[1:5])
+```
+
+il y a 90 % de chance qu'un client achète de la bière en bouteille sachant qu'il a acheté de la liqueur et du vin.
+
+## Trier les résultats
+
+```{r}
+rules1 <- sort(rules1, by = "confidence", decreasing = TRUE)
+inspect(rules1[1:10])
+```
+
+
+## Cibler un produit
+
+On peut cibler un produit pour répondre aux questions :
+
+  - *Quel achat de produit conduit un client à acheter de la bière ?*
+
+```{r}
+rules<-apriori(data=Groceries, parameter=list(supp=0.001,conf = 0.08), 
+ appearance = list(default="lhs",rhs="bottled beer"),
+ control = list(verbose=F))
+ rules<-sort(rules, decreasing=TRUE,by="confidence")
+ inspect(rules[1:15])
+```
+
+  - *Qu'est ce que les clients achètent comme autre produit quand ils ont achèté de la bière ?*
+
+
+```{r}
+rules<-apriori(data=Groceries, parameter=list(supp=0.001,conf = 0.08, minlen = 2), 
+ appearance = list(default="rhs",lhs="bottled beer"),
+ control = list(verbose=F))
+ rules<-sort(rules, decreasing=TRUE,by="confidence")
+ inspect(rules)
+```
+
+
+## Visualiser les résultats
+
+```{r}
+plot(rules1, method="graph")
+```
+
+
+# A vous de jouer : 
+
+Utilisez le jeu de données Fruits.xlsx
+
+  - Importez le jeu de données
+  
+```{r}
+data(Fruits)
+```
+  
+
+  - Formatez le jeu de données pour pouvoir effectuer une market basket analysis (créer un objet de type "transactions"). Faites le frequencyplot.
+
+```{r}
+# Supposons que 'fruits_data' est votre dataframe
+# fruits_data <- read.csv("chemin/vers/Fruits.csv")
+
+# Assurez-vous d'exclure la première colonne qui contient les ID de transaction
+fruits_trans <- as(Fruits[, -1], "transactions")
+
+# Génération du frequency plot
+itemFrequencyPlot(fruits_trans, topN = 20)
+```
+
+  - Faites l'analyse et affichez les premieres lignes de résultats triées par confidence
+
+
+```{r}
+rules<-apriori(data=fruits_trans, parameter=list(supp=0.001,conf = 0.08, minlen = 2),
+               appearance = list(default="rhs",lhs="Citron"),
+control = list(verbose=F))
+rules<-sort(rules, decreasing=TRUE,by="confidence")
+inspect(rules)
+```
+
+  - Sachant qu'un client a acheté un citron, quel fruit est il le plus susceptible d'acheter ? 
+
+
+
+
+
+
+
+
+
+
+
+
+sources : https://www.analyticsvidhya.com/blog/2021/10/end-to-end-introduction-to-market-basket-analysis-in-r/
+https://www.kaggle.com/datasets/heeraldedhia/groceries-dataset
+

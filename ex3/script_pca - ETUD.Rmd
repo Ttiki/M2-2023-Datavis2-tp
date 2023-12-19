@@ -1,0 +1,176 @@
+---
+title: "TD_ACP"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Objectif : effectuer une ACP sur le jeu de données auto pour essayer de créer des groupes de voitures qui se ressemblent.
+
+
+```{r}
+library(readxl)
+autos <- read_excel("autos.xls")
+```
+
+
+
+# Visualisation
+
+
+
+## Histogrammes
+
+
+```{r}
+library(DataExplorer)
+plot_histogram(autos) 
+```
+
+on peut aussi faire des qqplot :
+
+```{r}
+plot_qq(autos)
+```
+
+Les données sont dans des échelles très différentes, il faut normaliser le datset pour ramener toutes les variables quanti à une échelle comparable
+
+## Normalisation
+
+Parmi les techniques statistiques, nous avons la normalisation z-core et la normalisation de moyenne qui peuvent être utilisées pour les algorithmes qui supposent des données centrées sur le zéro, comme l’analyse en composantes principales (ACP). Nous allons centrer et réduire les données.
+
+"n1" - standardization ((x-mean)/sd)
+
+
+```{r}
+
+# Identification des colonnes numériques
+numeric_columns <- sapply(autos, is.numeric)
+
+# Normalisation uniquement des colonnes numériques
+autos_normalized <- autos
+autos_normalized[, numeric_columns] <- scale(autos[, numeric_columns])
+
+# Vérification des premières lignes des données normalisées
+head(autos_normalized)
+
+
+```
+
+
+## corrélogrammes
+
+```{r}
+# Exclure les colonnes non numériques
+autos_num <- autos_normalized[, sapply(autos_normalized, is.numeric)]
+
+# Calculer la matrice de corrélation pour les données numériques
+correlation_matrix <- cor(autos_num, use = "complete.obs")
+
+# Créer le corrélogramme avec corrplot
+library(corrplot)
+corrplot(correlation_matrix, method = "circle")
+
+
+```
+```{r}
+library(DataExplorer)
+library(ggplot2)
+library(gridExtra)
+
+# Histogrammes pour chaque variable
+hist_plots <- lapply(names(autos), function(var) {
+  ggplot(autos, aes_string(x = var)) + 
+    geom_histogram(bins = 30) +
+    theme_minimal() +
+    ggtitle(paste("Histogram of", var))
+})
+
+# QQPlots pour chaque variable
+qq_plots <- lapply(names(autos), function(var) {
+  ggplot(autos, aes_string(sample = var)) + 
+    stat_qq() + 
+    stat_qq_line() +
+    theme_minimal() +
+    ggtitle(paste("QQPlot of", var))
+})
+
+# Combinaison des graphiques
+combined_plots <- mapply(grid.arrange, hist_plots, qq_plots, ncol = 2, SIMPLIFY = FALSE)
+
+# Afficher le premier ensemble de graphiques comme exemple
+combined_plots[[1]]
+
+```
+```{r}
+# Assurez-vous que les packages nécessaires sont installés
+# install.packages("FactoMineR")
+# install.packages("factoextra")
+
+library(FactoMineR)
+library(factoextra)
+
+# Réalisation de l'ACP sur les données normalisées (en excluant les colonnes non numériques)
+autos_num <- autos_normalized[, sapply(autos_normalized, is.numeric)]
+pca_result <- PCA(autos_num, graph = FALSE)
+
+# Création du graphique PCA des individus
+fviz_pca_ind(pca_result, 
+             col.ind = "cos2", # Colorer par la qualité de la représentation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), # Couleurs
+             repel = TRUE) # Éviter le chevauchement des étiquettes
+
+```
+# Analyse en composante principale
+
+## Réalisation
+
+```{r}
+library(FactoMineR)
+
+```
+
+```{r}
+# Sélectionner uniquement les colonnes numériques
+autos_num <- autos_normalized[, sapply(autos_normalized, is.numeric)]
+
+# Réaliser l'ACP sur les données normalisées
+pca_result <- PCA(autos_num, graph = FALSE)
+```
+
+
+## Visualisation de l'inertie des axes
+
+```{r}
+library(factoextra)
+
+```
+
+
+
+## Visualisation des varibles
+
+```{r}
+
+
+```
+
+Quelles sont les variables qui contribuent le plus à la construction des axes ?
+
+```{r}
+
+
+
+
+```
+
+
+## Visualisation des individus statistiques
+
+```{r}
+
+```
+
