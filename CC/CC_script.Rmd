@@ -1,38 +1,53 @@
 ---
-title: "TD ACP + CCA pokemon"
+title: "CC Script"
 output: pdf_document
+params:
+  date: !r Sys.Date()
+  region: Europe
+  printcode: TRUE
+  data: NAME.csv
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 ```
 
-
+# Import des librairies
 
 ```{r}
 library(dplyr)
+library(readxl)
+library(DataExplorer)
+library(corrplot)
+library(ggplot2)
+library(gridExtra)
+library(FactoMineR)
+library(factoextra)
+library(arules)
+library(arulesViz)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(plotly)
 ```
-
 
 # Téléchargement et visualisation des données
 
 Avant de commencer, nous allons définir un répertoire de travail. Cela permettra à R de savoir dans quel dossier de notre PC nous souhaitons travailler
 
 ```{r}
-setwd("~/DataVis2/ex3/TD_ACP_ACH")
+setwd("~/DataVis2/CC")
 ```
-
 
 ## Les données
 
-Téléchargez les données au lien suivant : https://www.kaggle.com/datasets/abcsds/pokemon , importez les sous R et décrivez les rapidement. (Nombre de lignes, signification des colonnes, type des variables)
+Importation du dataset et visualisation des données brutes.
 
 ```{r}
-library(readxl)
-ds <- read.csv("Pokemon.csv")
+
+ds <- read.csv("NAME.csv")
 
 # Histogramme
-library(DataExplorer)
 plot_histogram(ds) 
 
 #q plot
@@ -48,14 +63,11 @@ ds_normalized[, numeric_columns] <- scale(ds[, numeric_columns])
 # Vérification des premières lignes des données normalisées
 head(ds_normalized)
 
-
 ```
-
 
 ## Visualisation
 
 Visualisez les liens entre les différentes variables quantitatives, commentez
-
 
 ```{r}
 # Exclure les colonnes non numériques
@@ -65,13 +77,10 @@ ds_num <- ds_normalized[, sapply(ds_normalized, is.numeric)]
 correlation_matrix <- cor(ds_num, use = "complete.obs")
 
 # Créer le corrélogramme avec corrplot
-library(corrplot)
 corrplot(correlation_matrix, method = "circle")
 ```
+
 ```{r}
-library(DataExplorer)
-library(ggplot2)
-library(gridExtra)
 
 # Filter out non-numeric variables
 numeric_vars <- names(ds)[sapply(ds, is.numeric)]
@@ -102,42 +111,82 @@ combined_plots[[1]]
 
 ```
 
-##Analyse des résultats
-D'après notre corrélogramme, nous remarquons que les différentes variables se corrèle assez bien au nieau du Total. Cependant, pour les autres variables, peux de résultats peuvent être conclue sur la corrélation des variables.
+### **Association Rule Mining**
+
+```{r}
+# Convert dataset to transactions (modify as per your dataset)
+transactions <- as(ds, "transactions")
+# Run apriori algorithm
+rules <- apriori(transactions, parameter = list(supp = 0.001, conf = 0.8))
+# Visualize rules
+plot(rules, method = "graph", control = list(type = "items"))
+```
+
+```{r}
+# Load your transaction data
+transactions <- read.transactions(ds, format = "basket")
+
+# Generate association rules
+rules <- apriori(transactions, parameter = list(supp = 0.001, conf = 0.8))
+
+# Visualize the rules
+# Various visualization methods are available. Choose one based on your analysis.
+# For example, a scatter plot visualization:
+plot(rules, method = "scatterplot", measure = "support", shading = "lift")
+
+# Or a grouped matrix-based visualization:
+plot(rules, method = "grouped")
+
+# Or a graph-based visualization:
+plot(rules, method = "graph")
+```
+
+### Decision Trees
+
+```{r}
+# Create decision tree model 
+tree_model <- rpart(ds$VARIABLE, data = ds, method = "class")
+# Visualize the tree
+rpart.plot(tree_model)
+
+```
+
+### Advanced Visualization
+
+```{r}
+# Heatmap example (adjust 'var1', 'var2', and 'value' with your actual variables)
+ggplot(ds, aes(x = var1, y = var2, fill = value)) + geom_tile()
+# Interactive plots example
+plot_ly(ds, x = ~var1, y = ~var2, type = "scatter", mode = "markers")
+```
+
+## Analyse des résultats 
+
+A REMPLIR
 
 # Analyse en Composantes Principales
 
-Sélectionnez les colonnes sur lesquelles vous allez faire l'ACP
+Sélection des colonnes sur lesquelles nous allons faire l'ACP
 
 ```{r}
 # Sélection des colonnes numériques pour l'ACP
-cols_for_pca <- c("Total", "HP", "Attack", "Defense", "Sp..Atk", "Sp..Def", "Speed")
-pokemon_num <- ds_num[, cols_for_pca]
+cols_for_pca <- c(NOM_DES_COLONNES)
+ds_num_pca <- ds_num[, cols_for_pca]
 ```
-
 
 ## Réalisation
 
 ```{r}
-# Chargement du package FactoMineR pour l'ACP
-library(FactoMineR)
-
 # Réalisation de l'ACP
-pca_result <- PCA(pokemon_num, scale.unit = TRUE, ncp = 5, graph = FALSE)
+pca_result <- PCA(ds_num_pca, scale.unit = TRUE, ncp = 5, graph = FALSE)
 ```
-
 
 ## Visualisation de l'inertie des axes
 
 ```{r}
-# Chargement du package factoextra
-library(factoextra)
-
 # Visualisation de l'inertie des axes (valeurs propres)
 fviz_eig(pca_result)
 ```
-
-
 
 ## Visualisation des varibles
 
@@ -149,9 +198,6 @@ fviz_pca_var(pca_result,
              repel = TRUE) # Éviter le chevauchement des étiquettes
 
 ```
-Sur l'axe Dim1 : Il semble que la variable Total ait le vecteur le plus long et soit donc la plus contributive sur cet axe. Cela indique que Total est fortement corrélée avec la première composante principale et joue donc un rôle important dans la variance expliquée par cette composante.
-
-Sur l'axe Dim2 : Il est un peu plus difficile de discerner la variable la plus contributive sur cet axe, car l'image n'affiche pas clairement les vecteurs pour Dim2. Cependant, en général, les variables dont les vecteurs pointent dans la direction de Dim2 ou qui sont parallèles à cet axe seraient considérées comme significatives pour la deuxième composante principale.
 
 Quelles sont les variables qui contribuent le plus à la construction des axes
 
@@ -176,7 +222,6 @@ print(contributions_dim2)
 
 ```
 
-
 ## Visualisation des individus statistiques
 
 ```{r}
@@ -188,22 +233,15 @@ fviz_pca_ind(pca_result,
              legend.title = "Cos2") # Ajouter un titre à la légende
 
 ```
+
 ## Biplot
 
-On peut faire un graphique des lignes et des colonnes ensemble: le biplot. 
+On peut faire un graphique des lignes et des colonnes ensemble: le biplot.
 
-La fonction biplot permet aussi de colorer les individus en fonction d'une variable qualitative (codée en facteur). Voici l'exemple avec la variable "géneration".
+La fonction biplot permet aussi de colorer les individus en fonction d'une variable qualitative (codée en facteur).
 
 ```{r}
-fviz_pca_biplot(pca_result, label="var", habillage=as.factor(ds$Generation),
-               addEllipses=TRUE, ellipse.level=0.95)
-```
-
-La génération du pokémon n'a pas d'influence sur le regoupement des individus. Essayez d'autres variables
-```{r}
-fviz_pca_biplot(pca_result, label="var", habillage=as.factor(ds$Type.1),
-               addEllipses=TRUE, ellipse.level=0.95)
-fviz_pca_biplot(pca_result, label="var", habillage=as.factor(ds$Legendary),
+fviz_pca_biplot(pca_result, label="var", habillage=as.factor(ds$COLONNES),
                addEllipses=TRUE, ellipse.level=0.95)
 ```
 
@@ -211,9 +249,8 @@ fviz_pca_biplot(pca_result, label="var", habillage=as.factor(ds$Legendary),
 
 Cette approche est utile dans les situations où l'on dispose d'un grand ensemble de données contenant des variables continues : l'analyse en composantes principales peut être utilisée pour réduire la dimension des données avant l'analyse de regroupement hiérarchique. Au lieu d'analyser le regroupement de deux variables seulement, nous pouvons analyser le regroupement de l'ensemble des données.
 
-
 ```{r}
-pca2 = PCA(pokemon_num, ncp = 3, graph = FALSE)
+pca2 = PCA(ds_num_pca, ncp = 3, graph = FALSE)
 hcpc <- HCPC(pca2, graph = FALSE)
 
 fviz_dend(hcpc, cex = 0.8, palette = "Dark2", rect = T, rect_fill = T, rect_border = "Dark2", show_labels = F) 
@@ -221,4 +258,4 @@ fviz_dend(hcpc, cex = 0.8, palette = "Dark2", rect = T, rect_fill = T, rect_bord
 fviz_cluster(hcpc, palette = "Dark2", show.clust.cent = T, main = "Factor map", labelsize=1)
 ```
 
-Le graphique 2 produit un regroupement sur le tracé de l'ACP avec les mêmes dimensions que celles discutées précédemment. Il est maintenant clair que nous pouvons distinguer trois groupes distincts de Pokemon. Dans le groupe 1, on trouve des pokémons avec des bonnes stats défensives. Les groupes 2 et 3 contiennent des Pokemon médiocres et faibles en termes de défense et de vitesse (groupes 3 et 2, respectivement).
+Le graphique 2 produit un regroupement sur le tracé de l'ACP avec les mêmes dimensions que celles discutées précédemment.

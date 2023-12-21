@@ -65,6 +65,7 @@ La distance de Gower qui peut s’appliquer à un ensemble de variables à la fo
 library(cluster)
 # Calcul de la distance de Gower
 distance_gower <- daisy(autos_scaled, metric = "gower")
+print(distance_gower)
 ```
 
 ## Création des clusters
@@ -129,26 +130,26 @@ heatmap(ordered_data, Rowv = as.dendrogram(clust_ward), col = heat.colors(256))
 
 ```
 ```{r}
-# Calculate total inertia (sum of squared distances)
-total_inertia <- sum(as.matrix(dist_matrix)^2)
-
-# Function to calculate R^2 for a given number of clusters
-calc_R2 <- function(k, dist_matrix) {
-  clust <- hclust(dist_matrix, method = "ward.D2")
-  groups <- cutree(clust, k)
-  aggregate_inertia <- sum(tapply(dist_matrix, INDEX = groups, FUN = function(x) sum(x^2)))
-  R2 <- (total_inertia - aggregate_inertia) / total_inertia
-  return(R2)
-}
-
-# Test a range of cluster numbers and compute R^2
-R2_values <- sapply(2:10, calc_R2, dist_matrix = dist_matrix)
-
-# Find the number of clusters with the highest R^2 value
-optimal_clusters <- which.max(R2_values)
-
-print(R2_values)
-print(optimal_clusters)
+# # Calculate total inertia (sum of squared distances)
+# total_inertia <- sum(as.matrix(dist_matrix)^2)
+# 
+# # Function to calculate R^2 for a given number of clusters
+# calc_R2 <- function(k, dist_matrix) {
+#   clust <- hclust(dist_matrix, method = "ward.D2")
+#   groups <- cutree(clust, k)
+#   aggregate_inertia <- sum(tapply(dist_matrix, INDEX = groups, FUN = function(x) sum(x^2)))
+#   R2 <- (total_inertia - aggregate_inertia) / total_inertia
+#   return(R2)
+# }
+# 
+# # Test a range of cluster numbers and compute R^2
+# R2_values <- sapply(2:10, calc_R2, dist_matrix = dist_matrix)
+# 
+# # Find the number of clusters with the highest R^2 value
+# optimal_clusters <- which.max(R2_values)
+# 
+# print(R2_values)
+# print(optimal_clusters)
 
 ```
 

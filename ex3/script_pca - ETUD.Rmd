@@ -1,6 +1,8 @@
 ---
 title: "TD_ACP"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -81,16 +83,19 @@ library(DataExplorer)
 library(ggplot2)
 library(gridExtra)
 
-# Histogrammes pour chaque variable
-hist_plots <- lapply(names(autos), function(var) {
+# Filter out non-numeric variables
+numeric_vars <- names(autos)[sapply(autos, is.numeric)]
+
+# Create histograms for numeric variables
+hist_plots <- lapply(numeric_vars, function(var) {
   ggplot(autos, aes_string(x = var)) + 
     geom_histogram(bins = 30) +
     theme_minimal() +
     ggtitle(paste("Histogram of", var))
 })
 
-# QQPlots pour chaque variable
-qq_plots <- lapply(names(autos), function(var) {
+# Create QQ plots for numeric variables
+qq_plots <- lapply(numeric_vars, function(var) {
   ggplot(autos, aes_string(sample = var)) + 
     stat_qq() + 
     stat_qq_line() +
@@ -98,11 +103,12 @@ qq_plots <- lapply(names(autos), function(var) {
     ggtitle(paste("QQPlot of", var))
 })
 
-# Combinaison des graphiques
+# Combine the plots
 combined_plots <- mapply(grid.arrange, hist_plots, qq_plots, ncol = 2, SIMPLIFY = FALSE)
 
-# Afficher le premier ensemble de graphiques comme exemple
+# Display the first set of combined plots as an example
 combined_plots[[1]]
+
 
 ```
 ```{r}
